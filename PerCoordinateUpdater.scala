@@ -1,4 +1,19 @@
-############### PerCoordinateUpdater for ftrl ###############
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 
 package org.apache.spark.ml.optim
@@ -27,20 +42,20 @@ abstract class PerCoordinateUpdater extends Serializable {
 
     val dimension  = weightsOld.size
 //    val weightsNew = Vectors.zeros(dimension)
-    val weightsNew = weightsOld
+    val weightsNew = weightsOld.asBreeze
     for (i <- 0 until dimension){
       var wti:Double = 0
-      if (abs(z.apply(i)> l1)){
-        wti = (signum(z.apply(i))* l1 -z.apply(i)) / (l2 + (beta + sqrt(n.apply(i))) / alpha)
+      if (abs(z(i))> l1){
+        wti = (signum(z(i))* l1 -z(i)) / (l2 + (beta + sqrt(n(i))) / alpha)
       }
       else {
         weightsNew(i) = wti
         }
     }
 
-    val pt:Double = lr(weightsNew.asBreeze.toDenseVector, features.asBreeze.toDenseVector)
+    val pt:Double = lr(weightsNew.toDenseVector, features.asBreeze.toDenseVector)
     val g:DenseVector[Double] = grad(label, pt, features.asBreeze.toDenseVector)
-    val sigma:DenseVector[Double] = (sqrt(n.asBreeze.toDenseVector + g * g) - sqrt(n)) / alpha
+    val sigma:DenseVector[Double] = (sqrt(n.asBreeze.toDenseVector + g * g) - sqrt(n.asBreeze.toDenseVector)) / alpha
 
 
     val zc:DenseVector[Double] = z.asBreeze.toDenseVector
@@ -50,7 +65,7 @@ abstract class PerCoordinateUpdater extends Serializable {
 
     val loss= crossLoss(label, pt)
 
-    (weightsNew, loss, Vectors.fromBreeze(nn),Vectors.fromBreeze(zd))
+    (Vectors.fromBreeze(weightsNew), loss, Vectors.fromBreeze(nn),Vectors.fromBreeze(zd))
   }
 
   /**
